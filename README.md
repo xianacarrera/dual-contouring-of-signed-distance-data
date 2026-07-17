@@ -78,10 +78,18 @@ If you use this code in your research, please cite:
 
 ```bibtex
 @inproceedings{Carrera2026DCSDD,
-  title     = {Dual Contouring of Signed Distance Data},
-  author    = {Carrera, Xiana and Wang, Ningna and Batty, Christopher and Stein, Oded and Sell\'{a}n, Silvia},
-  year      = {2026},
-  booktitle = {SIGGRAPH 2026 Conference Papers}
+  author = {Carrera, Xiana and Wang, Ningna and Batty, Christopher and Stein, Oded and Sell\'{a}n, Silvia},
+  title = {Dual Contouring of Signed Distance Data},
+  year = {2026},
+  isbn = {9798400725548},
+  publisher = {Association for Computing Machinery},
+  address = {New York, NY, USA},
+  url = {https://doi.org/10.1145/3799902.3811116},
+  doi = {10.1145/3799902.3811116},
+  booktitle = {Proceedings of the Special Interest Group on Computer Graphics and Interactive Techniques Conference Conference Papers},
+  articleno = {38},
+  numpages = {12},
+  series = {SIGGRAPH Conference Papers '26}
 }
 ```
 
