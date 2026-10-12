@@ -348,8 +348,18 @@ void average_hermite_normals(
     std::vector<Eigen::Vector4i> edge_local_edge_idxs;
     int edge_ordinal = 0; // ordinal index for each processed edge
 
-    #pragma omp parallel for collapse(3)
+    // Each z-slab appends to its own edge buffers; they are concatenated in
+    // slab order below, so the result matches a serial run.
+    std::vector<std::vector<Eigen::Vector4i>> slab_cells(resZ);
+    std::vector<std::vector<Eigen::Vector4i>> slab_local_idxs(resZ);
+
+    #pragma omp parallel for schedule(dynamic)
     for (int k = 0; k < resZ; ++k) {
+        Eigen::MatrixXd slab_V;
+        Eigen::MatrixXi slab_F;
+        int slab_next_vertex = 0;
+        int slab_next_face = 0;
+        int slab_ordinal = 0;
             for (int j = 0; j < resY; ++j) {
                 for (int i = 0; i < resX; ++i) {
 
@@ -361,9 +371,9 @@ void average_hermite_normals(
                         i, j, k,
                         i+1, j, k,
                         resX, resY, resZ,
-                        V_global, next_vertex_index,
-                        F_global, next_face_index,
-                        edge_cells, edge_local_edge_idxs, edge_ordinal,
+                        slab_V, slab_next_vertex,
+                        slab_F, slab_next_face,
+                        slab_cells[k], slab_local_idxs[k], slab_ordinal,
                         verbose
                     );
                 }
@@ -375,9 +385,9 @@ void average_hermite_normals(
                         i, j, k,
                         i, j+1, k,
                         resX, resY, resZ,
-                        V_global, next_vertex_index,
-                        F_global, next_face_index,
-                        edge_cells, edge_local_edge_idxs, edge_ordinal,
+                        slab_V, slab_next_vertex,
+                        slab_F, slab_next_face,
+                        slab_cells[k], slab_local_idxs[k], slab_ordinal,
                         verbose
                     );
                 }
@@ -389,15 +399,21 @@ void average_hermite_normals(
                         i, j, k,
                         i, j, k+1,
                         resX, resY, resZ,
-                        V_global, next_vertex_index,
-                        F_global, next_face_index,
-                        edge_cells, edge_local_edge_idxs, edge_ordinal,
+                        slab_V, slab_next_vertex,
+                        slab_F, slab_next_face,
+                        slab_cells[k], slab_local_idxs[k], slab_ordinal,
                         verbose
                     );
                 }
             }
         }
     }
+
+    for (int k = 0; k < resZ; ++k) {
+        edge_cells.insert(edge_cells.end(), slab_cells[k].begin(), slab_cells[k].end());
+        edge_local_edge_idxs.insert(edge_local_edge_idxs.end(), slab_local_idxs[k].begin(), slab_local_idxs[k].end());
+    }
+    edge_ordinal = (int)edge_cells.size();
 
     if (verbose) {
         std::cout << "edge_cells.size(): " << edge_cells.size() << "\n";
@@ -415,7 +431,7 @@ void average_hermite_normals(
             int local_edge_idx = local_edge_indices(ci);
             if (cell_idx >= 0 && local_edge_idx >= 0) {
                 Cell& cell = cells[cell_idx];
-                Eigen::Vector3d hermite_normal = cell.hermite_normals[local_edge_idx];
+                Eigen::Vector3d hermite_normal = cell.hermite_normals.at(local_edge_idx);
                 if (hermite_normal.norm() > 0) {
                     accumulated_normal += hermite_normal;
                     normal_contributions += 1;
@@ -429,7 +445,7 @@ void average_hermite_normals(
             int local_edge_idx = local_edge_indices(ci);
             if (cell_idx >= 0 && local_edge_idx >= 0) {
                 Cell& cell = cells[cell_idx];
-                cell.hermite_normals[local_edge_idx] = accumulated_normal;
+                cell.hermite_normals.at(local_edge_idx) = accumulated_normal;
             }
         }
     }
